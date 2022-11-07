@@ -6,6 +6,11 @@ import (
 	"os"
 )
 
+const (
+	alphabetSize  = 27
+	minimalSymbol = '$'
+)
+
 type node struct {
 	next        []int
 	link        int
@@ -15,22 +20,22 @@ type node struct {
 }
 
 func createNode(len int) *node {
-	ans := &node{next: make([]int, 27), len: len, link: -1, parent: -1}
-	for i := 0; i < 27; i++ {
+	ans := &node{next: make([]int, alphabetSize), len: len, link: -1, parent: -1}
+	for i := 0; i < alphabetSize; i++ {
 		ans.next[i] = -1
 	}
 	return ans
 }
 
 func (n *node) get(b byte) int {
-	if b == '$' {
+	if b == minimalSymbol {
 		return n.next[0]
 	}
 	return n.next[b-'a'+1]
 }
 
 func (n *node) set(b byte, val int) {
-	if b == '$' {
+	if b == minimalSymbol {
 		n.next[0] = val
 		return
 	}
@@ -59,10 +64,9 @@ func (a *Automata) Add(c byte, cnt int) {
 	a.last = len(a.nodes) - 1
 	for curNode != -1 {
 		to := a.nodes[curNode].get(c)
-		switch to {
-		case -1:
+		if to == -1 {
 			a.nodes[curNode].set(c, len(a.nodes)-1)
-		default:
+		} else {
 			if a.nodes[to].len == a.nodes[curNode].len+1 {
 				cur.link = to
 				exit = true
@@ -73,7 +77,7 @@ func (a *Automata) Add(c byte, cnt int) {
 						continue
 					}
 					if i == 0 {
-						newNode.set(byte('$'), nodeTo)
+						newNode.set(minimalSymbol, nodeTo)
 						continue
 					}
 					newNode.set(byte('a'+i-1), nodeTo)
@@ -86,21 +90,20 @@ func (a *Automata) Add(c byte, cnt int) {
 				var flag bool
 				for suffLink != -1 {
 					ok := a.nodes[suffLink].get(c)
-					if ok == to {
-						if !flag {
-							if suffLink != 0 {
-								newNode.left = cur.right - newNode.len
-								newNode.right = cur.right
-							} else {
-								newNode.left = cur.right - 1
-								newNode.right = cur.right
-							}
-							flag = true
-						}
-						a.nodes[suffLink].set(c, len(a.nodes)-1)
-					} else {
+					if ok != to {
 						break
 					}
+					if !flag && suffLink != 0 {
+						flag = true
+						newNode.left = cur.right - newNode.len
+						newNode.right = cur.right
+					}
+					if !flag && suffLink == 0 {
+						newNode.left = cur.right - 1
+						newNode.right = cur.right
+						flag = true
+					}
+					a.nodes[suffLink].set(c, len(a.nodes)-1)
 					suffLink = a.nodes[suffLink].link
 				}
 				exit = true

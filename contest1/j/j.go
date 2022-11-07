@@ -62,7 +62,7 @@ func getNumber(r int, linesNumber int) int {
 	return r + linesNumber
 }
 
-func firstInit(line []int, cnt []int, positions []int, classes []int, linesNumber int) error {
+func firstInit(line []int, cnt []int, positions []int, classes []int, linesNumber int) {
 	for _, letter := range line {
 		num := getNumber(letter, linesNumber)
 		cnt[num]++
@@ -84,7 +84,6 @@ func firstInit(line []int, cnt []int, positions []int, classes []int, linesNumbe
 			classes[positions[i]]++
 		}
 	}
-	return nil
 }
 
 func fill(arr []int, a int) {
@@ -93,7 +92,7 @@ func fill(arr []int, a int) {
 	}
 }
 
-func run(line []int, lengths []int, linesNumber int) ([]int, error) {
+func run(line []int, lengths []int, linesNumber int) []int {
 	var (
 		cnt          = make([]int, 1+alphabetSize+linesNumber)
 		positions    = make([]int, len(line))
@@ -104,9 +103,7 @@ func run(line []int, lengths []int, linesNumber int) ([]int, error) {
 		lcp          = make([]int, len(line)-1)
 	)
 
-	if err := firstInit(line, cnt, positions, classes, linesNumber); err != nil {
-		return nil, err
-	}
+	firstInit(line, cnt, positions, classes, linesNumber)
 
 	curDegree := 1
 	cnt = make([]int, len(classes))
@@ -168,16 +165,16 @@ func run(line []int, lengths []int, linesNumber int) ([]int, error) {
 	return solve(positions, lcp, line, lengths, linesNumber)
 }
 
-func joinSets(first map[int]bool, second map[int]bool) {
+func joinSets(first map[int]struct{}, second map[int]struct{}) {
 	for key := range second {
-		first[key] = true
+		first[key] = struct{}{}
 	}
 }
 
 func findCommon(suffArr []int, lcp []int, line []int, ans []int, lengths []int, linesNumber int) {
 	var (
 		stackVal     = make([]int, 0)
-		stackSets    = make([]map[int]bool, 0)
+		stackSets    = make([]map[int]struct{}, 0)
 		from         = make([]int, 0)
 		cnt          int
 		indexLengths int
@@ -187,63 +184,77 @@ func findCommon(suffArr []int, lcp []int, line []int, ans []int, lengths []int, 
 	curLen = lengths[indexLengths]
 	for i := 0; i < len(line); i++ {
 		from = append(from, cnt)
+		if i+1 == curLen && indexLengths < len(lengths) {
+			indexLengths++
+			curLen += lengths[indexLengths]
+			cnt++
+			continue
+		}
 		if i+1 == curLen {
 			indexLengths++
-			if indexLengths < len(lengths) {
-				curLen += lengths[indexLengths]
-			}
 			cnt++
 		}
 	}
-	if lcp[0] > 0 {
-		stackVal = append(stackVal, lcp[0])
-		stackSets = append(stackSets, make(map[int]bool))
-		stackSets[0][from[suffArr[0]]] = true
-		stackSets[0][from[suffArr[1]]] = true
-	}
-	for i := 1; i < len(lcp); i++ {
+	for i := 0; i < len(lcp); i++ {
 		switch {
+		case i == 0 && lcp[0] > 0:
+			stackVal = append(stackVal, lcp[0])
+			stackSets = append(stackSets, make(map[int]struct{}))
+			stackSets[0][from[suffArr[0]]] = struct{}{}
+			stackSets[0][from[suffArr[1]]] = struct{}{}
 		case lcp[i] > lcp[i-1]:
 			stackVal = append(stackVal, lcp[i])
-			stackSets = append(stackSets, make(map[int]bool))
-			stackSets[len(stackSets)-1][from[suffArr[i]]] = true
-			stackSets[len(stackSets)-1][from[suffArr[i+1]]] = true
+			stackSets = append(stackSets, make(map[int]struct{}))
+			stackSets[len(stackSets)-1][from[suffArr[i]]] = struct{}{}
+			stackSets[len(stackSets)-1][from[suffArr[i+1]]] = struct{}{}
 		case lcp[i] < lcp[i-1]:
-			curSet := make(map[int]bool)
-			for len(stackVal) > 0 && stackVal[len(stackVal)-1] > lcp[i] {
-				joinSets(curSet, stackSets[len(stackSets)-1])
+			curSet := make(map[int]struct{})
+			stackValLen := len(stackVal)
+			stackSetsLen := len(stackSets)
+			for stackValLen > 0 && stackVal[stackValLen-1] > lcp[i] {
+				joinSets(curSet, stackSets[stackSetsLen-1])
 				if len(stackSets) >= 2 {
-					joinSets(stackSets[len(stackSets)-2], stackSets[len(stackSets)-1])
+					joinSets(stackSets[stackSetsLen-2], stackSets[stackSetsLen-1])
 				}
-				ans[len(stackSets[len(stackSets)-1])] = max(
-					ans[len(stackSets[len(stackSets)-1])],
-					stackVal[len(stackVal)-1],
+				ans[len(stackSets[stackSetsLen-1])] = max(
+					ans[len(stackSets[stackSetsLen-1])],
+					stackVal[stackValLen-1],
 				)
-				stackVal = stackVal[:(len(stackVal) - 1)]
-				stackSets = stackSets[:(len(stackSets) - 1)]
+				stackVal = stackVal[:(stackValLen - 1)]
+				stackSets = stackSets[:(stackSetsLen - 1)]
+				stackValLen--
+				stackSetsLen--
 			}
 			if lcp[i] != 0 {
 				stackVal = append(stackVal, lcp[i])
-				stackSets = append(stackSets, make(map[int]bool))
-				stackSets[len(stackSets)-1][from[suffArr[i]]] = true
-				stackSets[len(stackSets)-1][from[suffArr[i+1]]] = true
+				stackSets = append(stackSets, make(map[int]struct{}))
+				stackSets[len(stackSets)-1][from[suffArr[i]]] = struct{}{}
+				stackSets[len(stackSets)-1][from[suffArr[i+1]]] = struct{}{}
 				joinSets(stackSets[len(stackSets)-1], curSet)
 			}
 		default:
 			if len(stackSets) > 0 {
-				stackSets[len(stackSets)-1][from[suffArr[i+1]]] = true
+				stackSets[len(stackSets)-1][from[suffArr[i+1]]] = struct{}{}
 			}
 		}
 	}
 }
 
-func solve(suffArr []int, lcp []int, line []int, lengths []int, linesNumber int) ([]int, error) {
+func solve(suffArr []int, lcp []int, line []int, lengths []int, linesNumber int) []int {
 	var (
 		ans = make([]int, linesNumber+1)
 	)
 
 	findCommon(suffArr, lcp, line, ans, lengths, linesNumber)
-	return ans, nil
+	return ans
+}
+
+func completeAnswer(ans []int) {
+	for i := len(ans) - 1; i > 0; i-- {
+		if ans[i] > ans[i-1] {
+			ans[i-1] = ans[i]
+		}
+	}
 }
 
 func main() {
@@ -252,7 +263,6 @@ func main() {
 		bigline     []int
 		lengths     []int
 		linesNumber int
-		err         error
 	)
 
 	scanner := bufio.NewScanner(os.Stdin)
@@ -269,15 +279,8 @@ func main() {
 		bigline = append(bigline, -i-1)
 	}
 
-	if ans, err = run(bigline, lengths, linesNumber); err != nil {
-		panic(err)
-	}
-	for i := len(ans) - 1; i > 0; i-- {
-		if ans[i] > ans[i-1] {
-			ans[i-1] = ans[i]
-		}
-	}
-
+	run(bigline, lengths, linesNumber)
+	completeAnswer(ans)
 	for i := 2; i < len(ans); i++ {
 		fmt.Println(ans[i])
 	}

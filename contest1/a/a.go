@@ -2,9 +2,8 @@ package main
 
 import "fmt"
 
-func CreatePrefFunc(s string) []int {
+func BuildPrefFunc(s string) []int {
 	ans := make([]int, len(s))
-	ans[0] = 0
 
 	for i := 1; i < len(s); i++ {
 		res := ans[i-1]
@@ -31,10 +30,10 @@ func main() {
 	fmt.Scan(&s)
 	fmt.Scan(&t)
 
-	prefFunc := CreatePrefFunc(t + "#" + s)
+	prefFunc := BuildPrefFunc(t + "#" + s)
 	for i, pref := range prefFunc {
 		if len(t) == pref {
-			fmt.Print(i-len(t)-len(t), " ")
+			fmt.Printf("%d ", i-len(t)-len(t))
 		}
 	}
 }

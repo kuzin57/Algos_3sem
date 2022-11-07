@@ -176,15 +176,17 @@ func run(line string, number int) (string, error) {
 }
 
 func findKthSubstr(suffixArr []int, lcp []int, line string, seqNumber int) (string, error) {
-	var cnt = len(line) - suffixArr[0]
+	cnt := len(line) - suffixArr[0]
 	if cnt >= seqNumber {
 		return line[suffixArr[0]:(suffixArr[0] + seqNumber)], nil
 	}
 	for i := 1; i < len(suffixArr); i++ {
-		if cnt+len(line)-suffixArr[i]-lcp[i-1] >= seqNumber {
-			return line[suffixArr[i]:(seqNumber - cnt + lcp[i-1] + suffixArr[i])], nil
+		curElem := suffixArr[i]
+		lcpElem := lcp[i-1]
+		if cnt+len(line)-curElem-lcpElem >= seqNumber {
+			return line[curElem:(seqNumber - cnt + lcpElem + curElem)], nil
 		}
-		cnt += len(line) - suffixArr[i] - lcp[i-1]
+		cnt += len(line) - curElem - lcpElem
 	}
 	return line[suffixArr[len(suffixArr)-1]:], nil
 }

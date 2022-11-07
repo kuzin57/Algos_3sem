@@ -19,7 +19,7 @@ struct State {
     char letter;
 };
 
-State::State() {}
+State::State() = default;
 
 State::State(int depth, int parent, char letter, int link, int compressed_link)
     : depth(depth), parent(parent), letter(letter), link(link), compressed_link(compressed_link) {}
@@ -36,7 +36,6 @@ struct Bohr {
     int get_link(int s);
     int go(int s, char ch);
     int get_compressed_link(int s);
-    void find_occurences(std::vector<std::vector<int>>& occurences, const std::string& line, int size);
 };
 
 void Bohr::initialize_alphabet(const std::string& line, const std::vector<std::string>& dict) {
@@ -44,7 +43,7 @@ void Bohr::initialize_alphabet(const std::string& line, const std::vector<std::s
     for (int i = 0; i < line.size(); ++i) {
         auto it = alphabet.find(line[i]);
         if (it == alphabet.end()) {
-            alphabet[line[i]] = cnt++;
+            it->second = cnt++;
         }
     }
 
@@ -52,7 +51,7 @@ void Bohr::initialize_alphabet(const std::string& line, const std::vector<std::s
         for (size_t j = 0; j < dict[i].size(); ++j) {
             auto it = alphabet.find(dict[i][j]);
             if (it == alphabet.end()) {
-                alphabet[dict[i][j]] = cnt++;
+                it->second = cnt++;
             }
         }
     }
@@ -102,7 +101,7 @@ int Bohr::go(int s, char ch) {
     if (next == st->go.end()) {
         auto n = st->to.find(c);
         if (n != st->to.end()) {
-            st->go[c] = st->to[c];
+            n->second = st->to[c];
         } else {
             if (s == start_state) {
                 st->go[c] = start_state;
@@ -132,33 +131,36 @@ int Bohr::get_compressed_link(int s) {
     return st->compressed_link;
 }
 
-void Bohr::find_occurences(std::vector<std::vector<int>>& occurences, const std::string& line, int size) {
-    auto cur = start_state;
+auto find_occurences(Bohr& bohr, int word_number, const std::string& line) {
+    std::vector<std::vector<int>> occurences(word_number);
+    auto cur = bohr.start_state;
     for (size_t i = 0; i < line.size(); ++i) {
-        auto ss = states[cur];
-        auto next = go(cur, line[i]);
+        auto ss = bohr.states[cur];
+        auto next = bohr.go(cur, line[i]);
         auto node = next;
-        while (node != start_state) {
-            auto n = states[node];
+        while (node != bohr.start_state) {
+            auto n = bohr.states[node];
             if (n->word_number.size() > 0) {
                 for (size_t j = 0; j < n->word_number.size(); ++j) {
                     occurences[n->word_number[j]].push_back(i + 2 - n->depth);
                 }
             }
-            node = get_compressed_link(node);
+            node = bohr.get_compressed_link(node);
         }
         cur = next;
     }
+    return occurences;
 }
 
-void run(const std::string& line, const std::vector<std::string>& dictionary, std::vector<std::vector<int>>& occurences) {
+auto run(const std::string& line, const std::vector<std::string>& dictionary) {
     auto bohr = Bohr();
     bohr.initialize_alphabet(line, dictionary);
     bohr.set_root();
     for(int i = 0; i < dictionary.size(); ++i) {
         bohr.add(dictionary[i], i);
     }
-    bohr.find_occurences(occurences, line, dictionary.size());
+    auto occurences = find_occurences(bohr, dictionary.size(), line);
+    return occurences;
 }
 
 int main() {
@@ -169,12 +171,11 @@ int main() {
 
     std::cin >> N;
     auto dictionary = std::vector<std::string>(N);
-    auto occurences = std::vector<std::vector<int>>(N);
     for(int i = 0; i < N; ++i) {
         std::cin >> dictionary[i];
     }
 
-    run(line, dictionary, occurences);
+    auto occurences = run(line, dictionary);
     for(size_t i = 0; i < occurences.size(); ++i) {
         std::cout << occurences[i].size() << " ";
         for(size_t j = 0; j < occurences[i].size(); ++j) {

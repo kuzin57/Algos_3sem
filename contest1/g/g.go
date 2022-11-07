@@ -7,19 +7,20 @@ import (
 )
 
 const (
-	alphabetSize = 26
+	alphabetSize  = 26
+	minimalSymbol = 'A' - 1
 )
 
-func getNumber(r byte) int {
-	if '@' <= r && r <= 'Z' {
-		return int(r - '@')
+func getAlphabetNumber(r byte) int {
+	if minimalSymbol <= r && r <= 'Z' {
+		return int(r - minimalSymbol)
 	}
 	return int(r - 'a' + alphabetSize + 1)
 }
 
 func firstInit(line string, cnt []int, positions []int, classes []int) error {
 	for _, letter := range line {
-		num := getNumber(byte(letter))
+		num := getAlphabetNumber(byte(letter))
 		cnt[num]++
 	}
 
@@ -27,7 +28,7 @@ func firstInit(line string, cnt []int, positions []int, classes []int) error {
 		cnt[i] += cnt[i-1]
 	}
 	for i := len(line) - 1; i >= 0; i-- {
-		num := getNumber(line[i])
+		num := getAlphabetNumber(line[i])
 		cnt[num]--
 		positions[cnt[num]] = i
 	}

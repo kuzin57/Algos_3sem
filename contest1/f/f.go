@@ -10,7 +10,7 @@ const (
 	alphabetSize = 26
 )
 
-func getNumber(r byte) int {
+func getAlphabetNumber(r byte) int {
 	if 'A' <= r && r <= 'Z' {
 		return int(r - 'A')
 	}
@@ -24,29 +24,35 @@ func max(a, b int) int {
 	return a
 }
 
-func firstInit(line string, cnt []int, positions []int, classes []int) error {
-	for _, letter := range line {
-		num := getNumber(byte(letter))
-		cnt[num]++
+func stableCountSort(
+	line string,
+	curDegree int,
+	cnt []int,
+	positions []int,
+	oldClasses []int,
+	newClasses []int,
+	newPositions []int,
+) {
+	for i := range line {
+		cnt[oldClasses[i]]++
 	}
 
-	for i := 1; i < len(cnt); i++ {
+	for i := 1; i < len(line); i++ {
 		cnt[i] += cnt[i-1]
 	}
+
 	for i := len(line) - 1; i >= 0; i-- {
-		num := getNumber(line[i])
-		cnt[num]--
-		positions[cnt[num]] = i
+		cnt[oldClasses[newPositions[i]]]--
+		positions[cnt[oldClasses[newPositions[i]]]] = newPositions[i]
 	}
 
-	classes[positions[0]] = 0
 	for i := 1; i < len(line); i++ {
-		classes[positions[i]] = classes[positions[i-1]]
-		if line[positions[i]] != line[positions[i-1]] {
-			classes[positions[i]]++
+		newClasses[positions[i]] = newClasses[positions[i-1]]
+		if oldClasses[positions[i]] != oldClasses[positions[i-1]] ||
+			oldClasses[(positions[i]+curDegree)%len(line)] != oldClasses[(positions[i-1]+curDegree)%len(line)] {
+			newClasses[positions[i]]++
 		}
 	}
-	return nil
 }
 
 func fill(arr []int, a int) {
@@ -55,62 +61,8 @@ func fill(arr []int, a int) {
 	}
 }
 
-func run(line string) (int, error) {
-	line += "{"
-
-	var (
-		cnt          = make([]int, 2*alphabetSize+1)
-		positions    = make([]int, len(line))
-		classes      = make([]int, len(line))
-		newPositions = make([]int, len(line))
-		newClasses   = make([]int, len(line))
-		pos          = make([]int, len(line))
-		lcp          = make([]int, len(line)-1)
-	)
-
-	if err := firstInit(line, cnt, positions, classes); err != nil {
-		return 0, err
-	}
-
-	curDegree := 1
-	cnt = make([]int, len(classes))
-	for curDegree < len(line) {
-		for i := range line {
-			newPositions[i] = positions[i] - curDegree
-			if newPositions[i] < 0 {
-				newPositions[i] += len(line)
-			}
-		}
-
-		fill(cnt, 0)
-		for i := range line {
-			cnt[classes[i]]++
-		}
-
-		for i := 1; i < len(line); i++ {
-			cnt[i] += cnt[i-1]
-		}
-
-		for i := len(line) - 1; i >= 0; i-- {
-			cnt[classes[newPositions[i]]]--
-			positions[cnt[classes[newPositions[i]]]] = newPositions[i]
-		}
-
-		fill(newClasses, 0)
-		for i := 1; i < len(line); i++ {
-			newClasses[positions[i]] = newClasses[positions[i-1]]
-			if classes[positions[i]] != classes[positions[i-1]] ||
-				classes[(positions[i]+curDegree)%len(line)] != classes[(positions[i-1]+curDegree)%len(line)] {
-				newClasses[positions[i]]++
-			}
-		}
-
-		for i := range line {
-			classes[i] = newClasses[i]
-		}
-		curDegree *= 2
-	}
-
+func fillLCP(line string, positions []int, lcp []int) {
+	var pos = make([]int, len(line))
 	positions = positions[:len(positions)-1]
 
 	for i := range positions {
@@ -119,7 +71,7 @@ func run(line string) (int, error) {
 
 	var curLCP int
 	line = line[:len(line)-1]
-	for i := range line {
+	for i := range pos {
 		curLCP = max(curLCP-1, 0)
 		if pos[i] == len(line)-1 {
 			continue
@@ -130,19 +82,57 @@ func run(line string) (int, error) {
 		}
 		lcp[pos[i]] = curLCP
 	}
+}
+
+func run(line string) int {
+	line += "{"
+
+	var (
+		cnt          = make([]int, 2*alphabetSize+1)
+		positions    = make([]int, len(line))
+		classes      = make([]int, len(line))
+		newPositions = make([]int, len(line))
+		newClasses   = make([]int, len(line))
+		lcp          = make([]int, len(line)-1)
+	)
+
+	for i := range line {
+		classes[i] = getAlphabetNumber(line[i])
+		newPositions[i] = i
+	}
+
+	stableCountSort(line, 0, cnt, positions, classes, newClasses, newPositions)
+	copy(classes, newClasses)
+
+	cnt = make([]int, len(classes))
+	for curDegree := 1; curDegree < len(line); curDegree *= 2 {
+		for i := range line {
+			newPositions[i] = positions[i] - curDegree
+			if newPositions[i] < 0 {
+				newPositions[i] += len(line)
+			}
+		}
+
+		fill(cnt, 0)
+		fill(newClasses, 0)
+		stableCountSort(line, curDegree, cnt, positions, classes, newClasses, newPositions)
+
+		copy(classes, newClasses)
+	}
+
+	fillLCP(line, positions, lcp)
 
 	var length int
 	for i := range lcp {
 		temp := len(line) - positions[i] - lcp[i]
 		length += (lcp[i]*temp + ((temp+1)*temp)/2)
 	}
-	return length, nil
+	return length
 }
 
 func main() {
 	var (
 		ans int
-		err error
 	)
 
 	scanner := bufio.NewScanner(os.Stdin)
@@ -150,8 +140,6 @@ func main() {
 	scanner.Scan()
 
 	line := scanner.Text()
-	if ans, err = run(line); err != nil {
-		panic(err)
-	}
+	ans = run(line)
 	fmt.Println(ans)
 }

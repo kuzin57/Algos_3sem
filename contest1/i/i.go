@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	alphabetSize = 26
+	alphabetSize  = 26
+	minimalSymbol = 'A' - 1
 )
 
 func max(a, b int) int {
@@ -27,21 +28,21 @@ func min(a, b int) int {
 
 func abs(a int) int {
 	if a < 0 {
-		return a * (-1)
+		return -a
 	}
 	return a
 }
 
-func getNumber(r byte) int {
-	if '@' <= r && r <= 'Z' {
-		return int(r - '@')
+func getAlphabetNumber(r byte) int {
+	if minimalSymbol <= r && r <= 'Z' {
+		return int(r - minimalSymbol)
 	}
 	return int(r - 'a' + alphabetSize + 1)
 }
 
 func firstInit(line string, cnt []int, positions []int, classes []int) error {
 	for _, letter := range line {
-		num := getNumber(byte(letter))
+		num := getAlphabetNumber(byte(letter))
 		cnt[num]++
 	}
 
@@ -49,7 +50,7 @@ func firstInit(line string, cnt []int, positions []int, classes []int) error {
 		cnt[i] += cnt[i-1]
 	}
 	for i := len(line) - 1; i >= 0; i-- {
-		num := getNumber(line[i])
+		num := getAlphabetNumber(line[i])
 		cnt[num]--
 		positions[cnt[num]] = i
 	}
@@ -175,8 +176,8 @@ func getKey(suffArr []int, lcp []int, line string) (int, error) {
 func maxSupref(line string) int {
 	var curPref string
 	var ans int
-	for _, r := range line {
-		curPref += string(r)
+	for i := range line {
+		curPref = line[:min(len(line), i+1)]
 		if strings.HasSuffix(line, curPref) && line != curPref {
 			ans = max(ans, len(curPref))
 		}

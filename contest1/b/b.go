@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"os"
-	"sort"
 	"strconv"
 )
 
@@ -97,7 +96,6 @@ func main() {
 
 	var (
 		numberCubes int
-		// numberColors int
 	)
 
 	numberCubes = ScanInt(scanner)
@@ -109,7 +107,7 @@ func main() {
 		colors[i] = ScanInt(scanner)
 	}
 
-	line := make([]int, 0)
+	var line []int
 	line = append(line, colors...)
 	line = append(line, 0)
 
@@ -125,7 +123,7 @@ func main() {
 		}
 	}
 
-	sort.Ints(ans)
+	Reverse(ans)
 	ans = append(ans, numberCubes)
 
 	for _, num := range ans {
