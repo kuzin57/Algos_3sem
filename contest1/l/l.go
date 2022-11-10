@@ -66,48 +66,48 @@ func (a *Automata) Add(c byte, cnt int) {
 		to := a.nodes[curNode].get(c)
 		if to == -1 {
 			a.nodes[curNode].set(c, len(a.nodes)-1)
-		} else {
-			if a.nodes[to].len == a.nodes[curNode].len+1 {
-				cur.link = to
-				exit = true
-			} else {
-				newNode := createNode(a.nodes[curNode].len + 1)
-				for i, nodeTo := range a.nodes[to].next {
-					if nodeTo == -1 {
-						continue
-					}
-					if i == 0 {
-						newNode.set(minimalSymbol, nodeTo)
-						continue
-					}
-					newNode.set(byte('a'+i-1), nodeTo)
+		}
+		if to != -1 && a.nodes[to].len == a.nodes[curNode].len+1 {
+			cur.link = to
+			exit = true
+		}
+		if to != -1 && a.nodes[to].len != a.nodes[curNode].len+1 {
+			newNode := createNode(a.nodes[curNode].len + 1)
+			for i, nodeTo := range a.nodes[to].next {
+				if nodeTo == -1 {
+					continue
 				}
-				a.nodes = append(a.nodes, newNode)
-				newNode.link = a.nodes[to].link
-				a.nodes[to].link = len(a.nodes) - 1
-				cur.link = len(a.nodes) - 1
-				suffLink := curNode
-				var flag bool
-				for suffLink != -1 {
-					ok := a.nodes[suffLink].get(c)
-					if ok != to {
-						break
-					}
-					if !flag && suffLink != 0 {
-						flag = true
-						newNode.left = cur.right - newNode.len
-						newNode.right = cur.right
-					}
-					if !flag && suffLink == 0 {
-						newNode.left = cur.right - 1
-						newNode.right = cur.right
-						flag = true
-					}
-					a.nodes[suffLink].set(c, len(a.nodes)-1)
-					suffLink = a.nodes[suffLink].link
+				if i == 0 {
+					newNode.set(minimalSymbol, nodeTo)
+					continue
 				}
-				exit = true
+				newNode.set(byte('a'+i-1), nodeTo)
 			}
+			a.nodes = append(a.nodes, newNode)
+			newNode.link = a.nodes[to].link
+			a.nodes[to].link = len(a.nodes) - 1
+			cur.link = len(a.nodes) - 1
+			suffLink := curNode
+			var flag bool
+			for suffLink != -1 {
+				ok := a.nodes[suffLink].get(c)
+				if ok != to {
+					break
+				}
+				if !flag && suffLink != 0 {
+					flag = true
+					newNode.left = cur.right - newNode.len
+					newNode.right = cur.right
+				}
+				if !flag && suffLink == 0 {
+					newNode.left = cur.right - 1
+					newNode.right = cur.right
+					flag = true
+				}
+				a.nodes[suffLink].set(c, len(a.nodes)-1)
+				suffLink = a.nodes[suffLink].link
+			}
+			exit = true
 		}
 		if exit {
 			break

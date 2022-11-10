@@ -147,10 +147,11 @@ func run(line string) (int, error) {
 		lcp[pos[i]] = curLCP
 	}
 
-	return getKey(positions, lcp, line)
+	return getMaxTargetFnValue(positions, lcp, line)
 }
 
-func getKey(suffArr []int, lcp []int, line string) (int, error) {
+func getMaxTargetFnValue(suffArr []int, lcp []int, line string) (int, error) {
+	// this function finds maximum of |t| + (f(t))^2
 	var (
 		ans      int
 		minBegin int
@@ -174,13 +175,17 @@ func getKey(suffArr []int, lcp []int, line string) (int, error) {
 }
 
 func maxSupref(line string) int {
-	var curPref string
+	if len(line) == 0 {
+		return 0
+	}
+
 	var ans int
-	for i := range line {
-		curPref = line[:min(len(line), i+1)]
+	curPref := line[:len(line)-1]
+	for len(curPref) > 0 {
 		if strings.HasSuffix(line, curPref) && line != curPref {
 			ans = max(ans, len(curPref))
 		}
+		curPref = curPref[:len(curPref)-1]
 	}
 	return ans
 }
