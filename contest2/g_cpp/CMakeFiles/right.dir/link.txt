@@ -1,0 +1,1 @@
+/usr/bin/c++ -rdynamic CMakeFiles/right.dir/right_solution/right.cpp.o -o bin/right 

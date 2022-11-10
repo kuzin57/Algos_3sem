@@ -1,0 +1,3 @@
+/home/kuzin57/algos_mipt/contest2/g_cpp/CMakeFiles/solution.dir
+/home/kuzin57/algos_mipt/contest2/g_cpp/CMakeFiles/edit_cache.dir
+/home/kuzin57/algos_mipt/contest2/g_cpp/CMakeFiles/rebuild_cache.dir
