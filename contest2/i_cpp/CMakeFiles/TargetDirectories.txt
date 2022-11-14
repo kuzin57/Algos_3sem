@@ -1,3 +1,0 @@
-/home/kuzin57/algos_mipt/contest2/i_cpp/CMakeFiles/test.dir
-/home/kuzin57/algos_mipt/contest2/i_cpp/CMakeFiles/edit_cache.dir
-/home/kuzin57/algos_mipt/contest2/i_cpp/CMakeFiles/rebuild_cache.dir
