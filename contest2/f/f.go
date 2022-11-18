@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	MODULE = 7340033
+	module = 7340033
 	ROOT   = 5
 	INVERT = 4404020
 	POWER  = 1 << 20
@@ -85,7 +85,7 @@ func linearRepr(a, b int) (int, int) {
 		x     = 1
 		y     = -(a / b)
 	)
-	y += (MODULE * (-y/MODULE + 1))
+	y += (module * (-y/module + 1))
 	a, b = b, a%b
 	for b != 0 {
 		q := a / b
@@ -94,15 +94,15 @@ func linearRepr(a, b int) (int, int) {
 			tmpY := y
 			x = (prevX - x*q)
 			if x < 0 {
-				x += (MODULE * (-x/MODULE + 1))
+				x += (module * (-x/module + 1))
 			} else {
-				x %= MODULE
+				x %= module
 			}
 			y = (prevY - y*q)
 			if y < 0 {
-				y += (MODULE * (-y/MODULE + 1))
+				y += (module * (-y/module + 1))
 			} else {
-				y %= MODULE
+				y %= module
 			}
 			prevX = tmpX
 			prevY = tmpY
@@ -112,14 +112,8 @@ func linearRepr(a, b int) (int, int) {
 	return x, y
 }
 
-func swap(arr []int, first, second int) {
-	tmp := arr[first]
-	arr[first] = arr[second]
-	arr[second] = tmp
-}
-
 func deleteZeros(poly []int) {
-	for poly[len(poly)-1] == 0 {
+	for len(poly) > 0 && poly[len(poly)-1] == 0 {
 		poly = poly[:(len(poly) - 1)]
 	}
 }
@@ -139,7 +133,7 @@ func fft(poly []int, log int, isInvertFFT bool) {
 	for i := 0; i < len(poly); i++ {
 		reversed := getReversed(i, log)
 		if i < reversed {
-			swap(poly, i, reversed)
+			poly[i], poly[reversed] = poly[reversed], poly[i]
 		}
 	}
 
@@ -152,87 +146,87 @@ func fft(poly []int, log int, isInvertFFT bool) {
 			root = ROOT
 		}
 		for j := curOffset * 2; j < POWER; j <<= 1 {
-			root = (root * root) % MODULE
+			root = (root * root) % module
 		}
 		for j := 0; j < len(poly); j += curOffset * 2 {
 			curRoot := 1
 			for k := 0; k < curOffset; k++ {
 				tmp1 := poly[k+j]
 				tmp2 := poly[j+k+curOffset]
-				poly[k+j] = tmp1 + (curRoot*tmp2)%MODULE
-				if poly[k+j] > MODULE {
-					poly[k+j] -= MODULE
+				poly[k+j] = tmp1 + (curRoot*tmp2)%module
+				if poly[k+j] > module {
+					poly[k+j] -= module
 				}
-				poly[k+j+curOffset] = tmp1 - (curRoot*tmp2)%MODULE
+				poly[k+j+curOffset] = tmp1 - (curRoot*tmp2)%module
 				if poly[k+j+curOffset] < 0 {
-					poly[k+j+curOffset] += MODULE
+					poly[k+j+curOffset] += module
 				}
-				curRoot = (curRoot * root) % MODULE
+				curRoot = (curRoot * root) % module
 			}
 		}
 		curOffset *= 2
 	}
 
 	if isInvertFFT {
-		_, inverted := linearRepr(MODULE, len(poly))
+		_, inverted := linearRepr(module, len(poly))
 		for i := range poly {
-			poly[i] = (poly[i] * inverted) % MODULE
+			poly[i] = (poly[i] * inverted) % module
 		}
 	}
 }
 
-func multiply(first_poly []int, second_poly_arg []int) []int {
+func multiply(firstPoly []int, secondPolyArg []int) []int {
 	var (
-		second_poly []int
+		secondPoly []int
 	)
-	second_poly = append(second_poly, second_poly_arg...)
+	secondPoly = append(secondPoly, secondPolyArg...)
 
-	if len(first_poly) == 0 || len(second_poly) == 0 {
-		first_poly = []int{0}
-		return first_poly
+	if len(firstPoly) == 0 || len(secondPoly) == 0 {
+		firstPoly = []int{0}
+		return firstPoly
 	}
-	for len(first_poly) > 1 && first_poly[len(first_poly)-1] == 0 {
-		first_poly = first_poly[:(len(first_poly) - 1)]
+	for len(firstPoly) > 1 && firstPoly[len(firstPoly)-1] == 0 {
+		firstPoly = firstPoly[:(len(firstPoly) - 1)]
 	}
-	for len(second_poly) > 1 && second_poly[len(second_poly)-1] == 0 {
-		second_poly = second_poly[:len(second_poly)-1]
+	for len(secondPoly) > 1 && secondPoly[len(secondPoly)-1] == 0 {
+		secondPoly = secondPoly[:len(secondPoly)-1]
 	}
-	if first_poly[len(first_poly)-1] == 0 || second_poly[len(second_poly)-1] == 0 {
-		first_poly = []int{0}
-		return first_poly
+	if firstPoly[len(firstPoly)-1] == 0 || secondPoly[len(secondPoly)-1] == 0 {
+		firstPoly = []int{0}
+		return firstPoly
 	}
-	for len(first_poly) < len(second_poly) {
-		first_poly = append(first_poly, 0)
-	}
-
-	for len(second_poly) < len(first_poly) {
-		second_poly = append(second_poly, 0)
+	for len(firstPoly) < len(secondPoly) {
+		firstPoly = append(firstPoly, 0)
 	}
 
-	min_deg_two := 1
+	for len(secondPoly) < len(firstPoly) {
+		secondPoly = append(secondPoly, 0)
+	}
+
+	minDegTwo := 1
 	log := 0
-	for min_deg_two < len(first_poly) {
+	for minDegTwo < len(firstPoly) {
 		log++
-		min_deg_two <<= 1
+		minDegTwo <<= 1
 	}
-	min_deg_two <<= 1
+	minDegTwo <<= 1
 	log++
 
-	for len(first_poly) < min_deg_two {
-		first_poly = append(first_poly, 0)
-		second_poly = append(second_poly, 0)
+	for len(firstPoly) < minDegTwo {
+		firstPoly = append(firstPoly, 0)
+		secondPoly = append(secondPoly, 0)
 	}
 
-	fft(first_poly, log, false)
-	fft(second_poly, log, false)
+	fft(firstPoly, log, false)
+	fft(secondPoly, log, false)
 
-	for i := range first_poly {
-		first_poly[i] = (first_poly[i] * second_poly[i]) % MODULE
+	for i := range firstPoly {
+		firstPoly[i] = (firstPoly[i] * secondPoly[i]) % module
 	}
 
-	fft(first_poly, log, true)
-	deleteZeros(first_poly)
-	return first_poly
+	fft(firstPoly, log, true)
+	deleteZeros(firstPoly)
+	return firstPoly
 }
 
 func findInvertPoly(poly []int, deg int) ([]int, error) {
@@ -248,7 +242,7 @@ func findInvertPoly(poly []int, deg int) ([]int, error) {
 		curDeg = 1
 	)
 
-	_, invert[0] = linearRepr(MODULE, poly[0])
+	_, invert[0] = linearRepr(module, poly[0])
 	for curDeg < deg {
 		firstPart := make([]int, 0)
 		for i := 0; i < curDeg; i++ {
@@ -277,11 +271,11 @@ func findInvertPoly(poly []int, deg int) ([]int, error) {
 				firstPart = append(firstPart, 0)
 			}
 			if i < len(firstPart) && i < len(secondPart) {
-				firstPart[i] = (-firstPart[i] - secondPart[i] + 2*MODULE) % MODULE
+				firstPart[i] = (-firstPart[i] - secondPart[i] + 2*module) % module
 			} else if i < len(secondPart) {
-				firstPart[i] = (-secondPart[i] + MODULE) % MODULE
+				firstPart[i] = (-secondPart[i] + module) % module
 			} else {
-				firstPart[i] = (-firstPart[i] + MODULE) % MODULE
+				firstPart[i] = (-firstPart[i] + module) % module
 			}
 		}
 		firstPart = multiply(firstPart, invert)
@@ -292,7 +286,7 @@ func findInvertPoly(poly []int, deg int) ([]int, error) {
 			if i+curDeg == len(invert) {
 				invert = append(invert, 0)
 			}
-			invert[i+curDeg] = (invert[i+curDeg] + firstPart[i]) % MODULE
+			invert[i+curDeg] = (invert[i+curDeg] + firstPart[i]) % module
 		}
 		curDeg <<= 1
 	}
@@ -314,16 +308,16 @@ func main() {
 	result, err := findInvertPoly(poly, m)
 	if err != nil {
 		fmt.Println(err)
-	} else {
-		for len(result) > m {
-			result = result[:(len(result) - 1)]
-		}
-		for len(result) < m {
-			result = append(result, 0)
-		}
-		for _, coeff := range result {
-			fmt.Printf("%d ", coeff%MODULE)
-		}
-		fmt.Println()
+		return
 	}
+	for len(result) > m {
+		result = result[:(len(result) - 1)]
+	}
+	for len(result) < m {
+		result = append(result, 0)
+	}
+	for _, coeff := range result {
+		fmt.Printf("%d ", coeff%module)
+	}
+	fmt.Println()
 }

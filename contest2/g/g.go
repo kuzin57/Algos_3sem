@@ -79,8 +79,6 @@ func getReversed(num int, log int) int {
 func gcd(a, b int) (int, int, int) {
 	var x, y int
 	if a == 0 {
-		x = 0
-		y = 1
 		return 0, 1, b
 	}
 	newX, newY, d := gcd(b%a, a)
@@ -296,7 +294,7 @@ func revPoly(poly []int) {
 	}
 }
 
-func div(firstPoly []int, secondPoly []int) ([]int, []int) {
+func divPoly(firstPoly []int, secondPoly []int) ([]int, []int) {
 	deg := len(firstPoly) - len(secondPoly) + 1
 	invertedSecondPoly, _ := findInvertPoly(secondPoly, deg)
 	invertedSecondPoly = invertedSecondPoly[:deg]
@@ -343,7 +341,7 @@ func main() {
 		fmt.Println()
 		return
 	}
-	Q, R := div(firstPoly, secondPoly)
+	Q, R := divPoly(firstPoly, secondPoly)
 	zerosFinished := false
 	for i := len(Q) - 1; i >= 0; i-- {
 		if Q[i] != 0 && !zerosFinished {

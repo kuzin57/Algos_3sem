@@ -73,34 +73,34 @@ func getPrimes() []int {
 	return primes
 }
 
-func getMinNotUsedPrime(index int, primes []int, primesUsed []bool) int {
+func findMinNotUsedPrimeIndex(index int, primes []int, primesUsed []bool) int {
 	for i := index; i < len(primes); i++ {
 		if !primesUsed[i] {
-			primesUsed[i] = true
 			return i
 		}
 	}
 	return -1
 }
 
-func getFirstNumber(num int, primes []int, primesUsed []bool) int {
-	var exit bool
-	for !exit {
-		exit = true
+func getNextDivisibleByPrime(num int, primes []int, primesUsed []bool) int {
+	var withoutUsedPrimes bool
+	for {
+		withoutUsedPrimes = true
 		for i, prime := range primes {
 			if prime > num {
 				break
 			}
 			if num%prime == 0 && primesUsed[i] {
-				exit = false
+				withoutUsedPrimes = false
 				break
 			}
 		}
-		if !exit {
+		if !withoutUsedPrimes {
 			num++
+			continue
 		}
+		return num
 	}
-	return num
 }
 
 func main() {
@@ -121,7 +121,8 @@ func main() {
 	}
 	for i := 0; i < n; i++ {
 		if takeOnlyPrimes {
-			index = getMinNotUsedPrime(index, primes, primesUsed)
+			index = findMinNotUsedPrimeIndex(index, primes, primesUsed)
+			primesUsed[index] = true
 			arr[i] = primes[index]
 			continue
 		}
@@ -131,7 +132,7 @@ func main() {
 			}
 			if arr[i]%prime == 0 && primesUsed[j] {
 				takeOnlyPrimes = true
-				arr[i] = getFirstNumber(arr[i], primes, primesUsed)
+				arr[i] = getNextDivisibleByPrime(arr[i], primes, primesUsed)
 				break
 			}
 		}

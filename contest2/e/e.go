@@ -84,44 +84,44 @@ func fft(poly []complex128, isInvert bool) {
 	}
 }
 
-func run(first_poly []complex128, second_poly []complex128) (deg int, poly []int) {
-	for len(first_poly) < len(second_poly) {
-		first_poly = append(first_poly, 0)
+func run(firstPoly []complex128, secondPoly []complex128) []int {
+	for len(firstPoly) < len(secondPoly) {
+		firstPoly = append(firstPoly, 0)
 	}
 
-	for len(second_poly) < len(first_poly) {
-		second_poly = append(second_poly, 0)
+	for len(secondPoly) < len(firstPoly) {
+		secondPoly = append(secondPoly, 0)
 	}
 
-	min_deg_two := 1
-	for min_deg_two < len(first_poly) {
-		min_deg_two <<= 1
+	minDegTwo := 1
+	for minDegTwo < len(firstPoly) {
+		minDegTwo <<= 1
 	}
-	min_deg_two <<= 1
+	minDegTwo <<= 1
 
-	for len(first_poly) < min_deg_two {
-		first_poly = append(first_poly, 0)
-		second_poly = append(second_poly, 0)
-	}
-
-	fft(first_poly, false)
-	fft(second_poly, false)
-
-	res_poly := make([]int, len(first_poly))
-	for i := range first_poly {
-		first_poly[i] *= second_poly[i]
+	for len(firstPoly) < minDegTwo {
+		firstPoly = append(firstPoly, 0)
+		secondPoly = append(secondPoly, 0)
 	}
 
-	fft(first_poly, true)
-	for i := range res_poly {
-		res_poly[i] = int(math.Round(real(first_poly[i])))
+	fft(firstPoly, false)
+	fft(secondPoly, false)
+
+	for i := range firstPoly {
+		firstPoly[i] *= secondPoly[i]
 	}
 
-	for res_poly[len(res_poly)-1] == 0 {
-		res_poly = res_poly[:(len(res_poly) - 1)]
+	fft(firstPoly, true)
+	resPoly := make([]int, len(firstPoly))
+	for i := range resPoly {
+		resPoly[i] = int(math.Round(real(firstPoly[i])))
 	}
-	reverse(res_poly)
-	return len(res_poly) - 1, res_poly
+
+	for resPoly[len(resPoly)-1] == 0 {
+		resPoly = resPoly[:(len(resPoly) - 1)]
+	}
+	reverse(resPoly)
+	return resPoly
 }
 
 func reverse(arr []int) {
@@ -134,43 +134,27 @@ func reverse(arr []int) {
 	}
 }
 
-func stupid_algo(first_poly []complex128, second_poly []complex128) []int {
-	res := make([]complex128, len(first_poly)+len(second_poly)-1)
-	for i := range first_poly {
-		for j := range second_poly {
-			res[i+j] += first_poly[i] * second_poly[j]
-		}
-	}
-	result := make([]int, len(res))
-	for i := range res {
-		result[i] = int(real(res[i]))
-	}
-	reverse(result)
-	return result
-}
-
 func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Buffer(nil, 1<<30)
 	scanner.Split(splitFunc)
 
 	n := ScanInt(scanner)
-	first_poly := make([]complex128, n+1)
+	firstPoly := make([]complex128, n+1)
 	for i := 0; i <= n; i++ {
 		val := ScanInt(scanner)
-		first_poly[n-i] = complex(float64(val), 0)
+		firstPoly[n-i] = complex(float64(val), 0)
 	}
 
 	m := ScanInt(scanner)
-	second_poly := make([]complex128, m+1)
+	secondPoly := make([]complex128, m+1)
 	for i := 0; i <= m; i++ {
 		val := ScanInt(scanner)
-		second_poly[m-i] = complex(float64(val), 0)
+		secondPoly[m-i] = complex(float64(val), 0)
 	}
 
-	// fmt.Println("right:", stupid_algo(first_poly, second_poly))
-	degRes, resultPoly := run(first_poly, second_poly)
-	fmt.Printf("%d ", degRes)
+	resultPoly := run(firstPoly, secondPoly)
+	fmt.Printf("%d ", len(resultPoly)-1)
 	for _, coeff := range resultPoly {
 		fmt.Printf("%d ", coeff)
 	}

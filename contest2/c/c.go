@@ -92,14 +92,12 @@ func main() {
 			}
 		}
 	}
-	switch simples {
-	case true:
-		if ones > 0 {
-			fmt.Println(n - ones)
-		} else {
-			fmt.Println(minDist + n - 1)
-		}
-	case false:
+	switch {
+	case simples && ones > 0:
+		fmt.Println(n - ones)
+	case simples && ones <= 0:
+		fmt.Println(minDist + n - 1)
+	default:
 		fmt.Println(-1)
 	}
 }

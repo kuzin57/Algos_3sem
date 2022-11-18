@@ -8,8 +8,6 @@ import (
 	"strconv"
 )
 
-const module = 1000000007
-
 func ScanInt(scanner *bufio.Scanner) int {
 	if !scanner.Scan() {
 		panic("nothing to scan")
@@ -49,30 +47,83 @@ func splitFunc(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	return advance, nil, nil
 }
 
-func linearRepr(a, b int) (int, int) {
-	if b == 1 {
-		return 0, 1
-	}
+func euclidCoeffs(a, b, module int) (int, int) {
 	var (
-		prevX = 0
-		prevY = 1
-		x     = 1
-		y     = -(a / b)
+		prevX, prevY = 0, 0
+		x, y         = 1, -(a / b)
 	)
 	a, b = b, a%b
 	for b != 0 {
 		q := a / b
 		if a%b != 0 {
-			tmpX := x
-			tmpY := y
+			tmpX, tmpY := x, y
 			x = (prevX - x*q) % module
 			y = (prevY - y*q) % module
-			prevX = tmpX
-			prevY = tmpY
+			prevX, prevY = tmpX, tmpY
 		}
 		a, b = b, a%b
 	}
 	return x, y
+}
+
+type modular struct {
+	value  int
+	module int
+}
+
+type modularFabric struct {
+	module int
+}
+
+func initFabric(module int) modularFabric {
+	return modularFabric{module: module}
+}
+
+func (f modularFabric) buildModular(number int) modular {
+	ans := modular{value: number % f.module}
+	ans.normalize()
+	return ans
+}
+
+func (m *modular) normalize() {
+	if m.value >= 0 {
+		m.value %= m.module
+		return
+	}
+	m.value = (m.value + m.module*(-m.value/m.module+1)) % m.module
+}
+
+func sumModulars(first modular, second modular) modular {
+	ans := modular{value: first.value + second.value}
+	ans.normalize()
+	return ans
+}
+
+func substrModulars(first modular, second modular) modular {
+	ans := modular{value: first.value - second.value}
+	ans.normalize()
+	return ans
+}
+
+func multModulars(first modular, second modular) modular {
+	ans := modular{value: first.value * second.value}
+	ans.normalize()
+	return ans
+}
+
+func findInvert(m modular) modular {
+	_, invert := euclidCoeffs(m.module, m.value, m.module)
+	ans := modular{value: invert}
+	ans.normalize()
+	return ans
+}
+
+func (m modular) String() string {
+	return fmt.Sprintf("%d", m.value)
+}
+
+func ScanModular(scanner *bufio.Scanner, f modularFabric) modular {
+	return f.buildModular(ScanInt(scanner))
 }
 
 func main() {
@@ -80,34 +131,21 @@ func main() {
 	scanner.Buffer(nil, 1<<30)
 	scanner.Split(splitFunc)
 
+	fabric := initFabric(1000000007)
 	var (
-		a         = ScanInt(scanner)
-		b         = ScanInt(scanner)
-		c         = ScanInt(scanner)
-		d         = ScanInt(scanner)
-		inverse_b int
-		inverse_d int
+		a        = ScanModular(scanner, fabric)
+		b        = ScanModular(scanner, fabric)
+		c        = ScanModular(scanner, fabric)
+		d        = ScanModular(scanner, fabric)
+		inverseB modular
+		inverseD modular
 	)
 
-	if a < 0 {
-		a += module
-	}
-	if b < 0 {
-		b += module
-	}
-	if c < 0 {
-		c += module
-	}
-	if d < 0 {
-		d += module
-	}
-	_, inverse_b = linearRepr(module, b)
-	if inverse_b < 0 {
-		inverse_b += module
-	}
-	_, inverse_d = linearRepr(module, d)
-	if inverse_d < 0 {
-		inverse_d += module
-	}
-	fmt.Println(((a*inverse_b)%module + (c*inverse_d)%module) % module)
+	a.normalize()
+	b.normalize()
+	c.normalize()
+	d.normalize()
+	inverseB = findInvert(b)
+	inverseD = findInvert(d)
+	fmt.Println(sumModulars(multModulars(a, inverseB), multModulars(c, inverseD)))
 }
