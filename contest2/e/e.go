@@ -85,14 +85,6 @@ func fft(poly []complex128, isInvert bool) {
 }
 
 func run(firstPoly []complex128, secondPoly []complex128) []int {
-	for len(firstPoly) < len(secondPoly) {
-		firstPoly = append(firstPoly, 0)
-	}
-
-	for len(secondPoly) < len(firstPoly) {
-		secondPoly = append(secondPoly, 0)
-	}
-
 	minDegTwo := 1
 	for minDegTwo < len(firstPoly) {
 		minDegTwo <<= 1
@@ -107,14 +99,15 @@ func run(firstPoly []complex128, secondPoly []complex128) []int {
 	fft(firstPoly, false)
 	fft(secondPoly, false)
 
+	helpPoly := make([]complex128, len(firstPoly))
 	for i := range firstPoly {
-		firstPoly[i] *= secondPoly[i]
+		helpPoly[i] = firstPoly[i] * secondPoly[i]
 	}
 
-	fft(firstPoly, true)
+	fft(helpPoly, true)
 	resPoly := make([]int, len(firstPoly))
 	for i := range resPoly {
-		resPoly[i] = int(math.Round(real(firstPoly[i])))
+		resPoly[i] = int(math.Round(real(helpPoly[i])))
 	}
 
 	for resPoly[len(resPoly)-1] == 0 {
@@ -153,6 +146,13 @@ func main() {
 		secondPoly[m-i] = complex(float64(val), 0)
 	}
 
+	for len(firstPoly) < len(secondPoly) {
+		firstPoly = append(firstPoly, 0)
+	}
+
+	for len(secondPoly) < len(firstPoly) {
+		secondPoly = append(secondPoly, 0)
+	}
 	resultPoly := run(firstPoly, secondPoly)
 	fmt.Printf("%d ", len(resultPoly)-1)
 	for _, coeff := range resultPoly {

@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	limit = 10000000
+	limit = 10_000_000
 )
 
 func ScanInt(scanner *bufio.Scanner) int {
@@ -82,19 +82,10 @@ func findMinNotUsedPrimeIndex(index int, primes []int, primesUsed []bool) int {
 	return -1
 }
 
-func getNextDivisibleByPrime(num int, primes []int, primesUsed []bool) int {
+func getNextDivisibleByPrime(num int, primes []int, primesUsed []bool, iteratePrimes func([]int, []bool, int, bool) bool) int {
 	var withoutUsedPrimes bool
 	for {
-		withoutUsedPrimes = true
-		for i, prime := range primes {
-			if prime > num {
-				break
-			}
-			if num%prime == 0 && primesUsed[i] {
-				withoutUsedPrimes = false
-				break
-			}
-		}
+		withoutUsedPrimes = !(iteratePrimes(primes, primesUsed, num, true))
 		if !withoutUsedPrimes {
 			num++
 			continue
@@ -116,6 +107,21 @@ func main() {
 		index          int
 	)
 
+	iterateThroughPrimes := func(primes []int, primesUsed []bool, number int, firstCase bool) bool {
+		for j, prime := range primes {
+			if number < prime {
+				break
+			}
+			if number%prime == 0 && primesUsed[j] && firstCase {
+				return true
+			}
+			if number%prime == 0 && !firstCase {
+				primesUsed[j] = true
+			}
+		}
+		return false
+	}
+
 	for i := 0; i < n; i++ {
 		arr[i] = ScanInt(scanner)
 	}
@@ -126,25 +132,13 @@ func main() {
 			arr[i] = primes[index]
 			continue
 		}
-		for j, prime := range primes {
-			if prime > arr[i] {
-				break
-			}
-			if arr[i]%prime == 0 && primesUsed[j] {
-				takeOnlyPrimes = true
-				arr[i] = getNextDivisibleByPrime(arr[i], primes, primesUsed)
-				break
-			}
+
+		takeOnlyPrimes = iterateThroughPrimes(primes, primesUsed, arr[i], true)
+		if takeOnlyPrimes {
+			arr[i] = getNextDivisibleByPrime(arr[i], primes, primesUsed, iterateThroughPrimes)
 		}
 
-		for j, prime := range primes {
-			if arr[i] < prime {
-				break
-			}
-			if arr[i]%prime == 0 {
-				primesUsed[j] = true
-			}
-		}
+		iterateThroughPrimes(primes, primesUsed, arr[i], false)
 	}
 	for _, num := range arr {
 		fmt.Printf("%d ", num)

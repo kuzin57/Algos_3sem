@@ -317,31 +317,7 @@ func divPoly(firstPoly []int, secondPoly []int) ([]int, []int) {
 	return revQ, R
 }
 
-func main() {
-	scanner := bufio.NewScanner(os.Stdin)
-	scanner.Buffer(nil, 1<<30)
-	scanner.Split(splitFunc)
-
-	m := ScanInt(scanner)
-	firstPoly := make([]int, m+1)
-	for i := 0; i <= m; i++ {
-		firstPoly[i] = ScanInt(scanner)
-	}
-	n := ScanInt(scanner)
-	secondPoly := make([]int, n+1)
-	for i := 0; i <= n; i++ {
-		secondPoly[i] = ScanInt(scanner)
-	}
-	if len(firstPoly) < len(secondPoly) {
-		fmt.Println("0 0")
-		fmt.Printf("%d ", len(firstPoly)-1)
-		for _, coeff := range firstPoly {
-			fmt.Printf("%d ", coeff)
-		}
-		fmt.Println()
-		return
-	}
-	Q, R := divPoly(firstPoly, secondPoly)
+func printResult(Q []int, R []int) {
 	zerosFinished := false
 	for i := len(Q) - 1; i >= 0; i-- {
 		if Q[i] != 0 && !zerosFinished {
@@ -372,4 +348,32 @@ func main() {
 		fmt.Print("0 0")
 	}
 	fmt.Println()
+}
+
+func main() {
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Buffer(nil, 1<<30)
+	scanner.Split(splitFunc)
+
+	m := ScanInt(scanner)
+	firstPoly := make([]int, m+1)
+	for i := 0; i <= m; i++ {
+		firstPoly[i] = ScanInt(scanner)
+	}
+	n := ScanInt(scanner)
+	secondPoly := make([]int, n+1)
+	for i := 0; i <= n; i++ {
+		secondPoly[i] = ScanInt(scanner)
+	}
+	if len(firstPoly) < len(secondPoly) {
+		fmt.Println("0 0")
+		fmt.Printf("%d ", len(firstPoly)-1)
+		for _, coeff := range firstPoly {
+			fmt.Printf("%d ", coeff)
+		}
+		fmt.Println()
+		return
+	}
+	Q, R := divPoly(firstPoly, secondPoly)
+	printResult(Q, R)
 }

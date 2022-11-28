@@ -18,6 +18,7 @@ const (
 
 var (
 	errZeroFirstCoeff = errors.New("The ears of a dead donkey")
+	fabric            modularFabric
 )
 
 func ScanInt(scanner *bufio.Scanner) int {
@@ -59,6 +60,66 @@ func splitFunc(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	return advance, nil, nil
 }
 
+type modular struct {
+	value  int
+	module int
+}
+
+type modularFabric struct {
+	module int
+}
+
+func initFabric(module int) modularFabric {
+	return modularFabric{module: module}
+}
+
+func (f modularFabric) buildModular(number int) modular {
+	ans := modular{value: number % f.module}
+	ans.normalize()
+	return ans
+}
+
+func (m *modular) normalize() {
+	if m.value >= 0 {
+		m.value %= m.module
+		return
+	}
+	m.value = (m.value + m.module*(-m.value/m.module+1)) % m.module
+}
+
+func sumModulars(first modular, second modular) modular {
+	ans := modular{value: first.value + second.value}
+	ans.normalize()
+	return ans
+}
+
+func substrModulars(first modular, second modular) modular {
+	ans := modular{value: first.value - second.value}
+	ans.normalize()
+	return ans
+}
+
+func multModulars(first modular, second modular) modular {
+	ans := modular{value: first.value * second.value}
+	ans.normalize()
+	return ans
+}
+
+func findInvert(m modular) modular {
+	_, invert := euclidCoeffs(m.module, m.value)
+	ans := modular{value: invert}
+	ans.normalize()
+	return ans
+}
+
+func (m modular) String() string {
+	return fmt.Sprintf("%d", m.value)
+}
+
+func ScanModular(scanner *bufio.Scanner, f modularFabric) modular {
+	return f.buildModular(ScanInt(scanner))
+}
+
 func getReversed(num int, log int) int {
 	left := 0
 	right := log - 1
@@ -75,47 +136,27 @@ func getReversed(num int, log int) int {
 	return num
 }
 
-func linearRepr(a, b int) (int, int) {
-	if b == 1 {
-		return 0, 1
-	}
+func euclidCoeffs(a, b int) (int, int) {
 	var (
-		prevX = 0
-		prevY = 1
-		x     = 1
-		y     = -(a / b)
+		prevX = fabric.buildModular(0)
+		prevY = fabric.buildModular(1)
+		x     = fabric.buildModular(1)
+		y     = fabric.buildModular(-(a / b))
 	)
-	y += (module * (-y/module + 1))
 	a, b = b, a%b
 	for b != 0 {
-		q := a / b
+		q := fabric.buildModular(a / b)
 		if a%b != 0 {
 			tmpX := x
 			tmpY := y
-			x = (prevX - x*q)
-			if x < 0 {
-				x += (module * (-x/module + 1))
-			} else {
-				x %= module
-			}
-			y = (prevY - y*q)
-			if y < 0 {
-				y += (module * (-y/module + 1))
-			} else {
-				y %= module
-			}
+			x = substrModulars(prevX, multModulars(x, q))
+			y = substrModulars(prevY, multModulars(y, q))
 			prevX = tmpX
 			prevY = tmpY
 		}
 		a, b = b, a%b
 	}
-	return x, y
-}
-
-func deleteZeros(poly []int) {
-	for len(poly) > 0 && poly[len(poly)-1] == 0 {
-		poly = poly[:(len(poly) - 1)]
-	}
+	return x.value, y.value
 }
 
 func max(a, b int) int {
@@ -168,7 +209,7 @@ func fft(poly []int, log int, isInvertFFT bool) {
 	}
 
 	if isInvertFFT {
-		_, inverted := linearRepr(module, len(poly))
+		_, inverted := euclidCoeffs(module, len(poly))
 		for i := range poly {
 			poly[i] = (poly[i] * inverted) % module
 		}
@@ -225,11 +266,13 @@ func multiply(firstPoly []int, secondPolyArg []int) []int {
 	}
 
 	fft(firstPoly, log, true)
-	deleteZeros(firstPoly)
+	for len(firstPoly) > 0 && firstPoly[len(firstPoly)-1] == 0 {
+		firstPoly = firstPoly[:(len(firstPoly) - 1)]
+	}
 	return firstPoly
 }
 
-func findInvertPoly(poly []int, deg int) ([]int, error) {
+func findInvertPoly(poly []int, deg int, fabric *modularFabric) ([]int, error) {
 	if poly[0] == 0 {
 		return nil, errZeroFirstCoeff
 	}
@@ -242,7 +285,7 @@ func findInvertPoly(poly []int, deg int) ([]int, error) {
 		curDeg = 1
 	)
 
-	_, invert[0] = linearRepr(module, poly[0])
+	_, invert[0] = euclidCoeffs(module, poly[0])
 	for curDeg < deg {
 		firstPart := make([]int, 0)
 		for i := 0; i < curDeg; i++ {
@@ -305,7 +348,8 @@ func main() {
 		poly[i] = ScanInt(scanner)
 	}
 
-	result, err := findInvertPoly(poly, m)
+	fabric = initFabric(module)
+	result, err := findInvertPoly(poly, m, &fabric)
 	if err != nil {
 		fmt.Println(err)
 		return
