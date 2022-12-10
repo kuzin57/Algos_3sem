@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"math"
 	"os"
@@ -10,7 +11,12 @@ import (
 )
 
 const (
-	epsilon = float64(1) / 10000000
+	epsilon = 1e-7
+)
+
+var (
+	errLinesParallel  = fmt.Errorf("lines are parallel")
+	errPointsAreEqual = fmt.Errorf("points are equal")
 )
 
 func ScanInt(scanner *bufio.Scanner) int {
@@ -53,14 +59,14 @@ func splitFunc(data []byte, atEOF bool) (advance int, token []byte, err error) {
 }
 
 type line struct {
-	A, B, C float64
+	a, b, c float64
 }
 
 type vector struct {
 	x, y float64
 }
 
-func Equal(a, b float64) bool {
+func equal(a, b float64) bool {
 	return math.Abs(a-b) < epsilon
 }
 
@@ -69,8 +75,8 @@ func ScanVector(scanner *bufio.Scanner) *vector {
 	return &vector{x: float64(x), y: float64(y)}
 }
 
-func isCollinear(first, second *vector) bool {
-	return Equal(first.x*second.y, second.x*first.y)
+func (v *vector) areCollinear(other *vector) bool {
+	return equal(v.x*other.y, other.x*v.y)
 }
 
 func subVectors(first, second *vector) *vector {
@@ -80,38 +86,38 @@ func subVectors(first, second *vector) *vector {
 	}
 }
 
-func isParallel(first, second *line) bool {
-	return Equal(first.A*second.B, second.A*first.B)
+func (l *line) areParallel(other *line) bool {
+	return equal(l.a*other.b, other.a*l.b)
 }
 
 func getIntersection(first, second *line) (*vector, error) {
-	if isParallel(first, second) {
-		return nil, fmt.Errorf("line are parallel")
+	if first.areParallel(second) {
+		return nil, errLinesParallel
 	}
 
-	toDivide := first.A*second.B - second.A*first.B
+	toDivide := first.a*second.b - second.a*first.b
 	return &vector{
-		x: (second.C*first.B - first.C*second.B) / toDivide,
-		y: (second.A*first.C - first.A*second.C) / toDivide,
+		x: (second.c*first.b - first.c*second.b) / toDivide,
+		y: (second.a*first.c - first.a*second.c) / toDivide,
 	}, nil
 }
 
 func buildLine(firstPoint, secondPoint *vector) (*line, error) {
 	if firstPoint.x == secondPoint.x && secondPoint.y == firstPoint.y {
-		return nil, fmt.Errorf("points are equal")
+		return nil, errPointsAreEqual
 	}
 
 	return &line{
-		A: firstPoint.y - secondPoint.y,
-		B: secondPoint.x - firstPoint.x,
-		C: firstPoint.x*secondPoint.y -
+		a: firstPoint.y - secondPoint.y,
+		b: secondPoint.x - firstPoint.x,
+		c: firstPoint.x*secondPoint.y -
 			secondPoint.x*firstPoint.y,
 	}, nil
 }
 
 func linesEqual(firstLine, secondLine *line) bool {
-	return Equal(firstLine.A*secondLine.B, firstLine.B*secondLine.A) &&
-		Equal(firstLine.A*secondLine.C, firstLine.C*secondLine.A)
+	return equal(firstLine.a*secondLine.b, firstLine.b*secondLine.a) &&
+		equal(firstLine.a*secondLine.c, firstLine.c*secondLine.a)
 }
 
 func betweenTwoNumbers(a, b, c float64) bool {
@@ -119,8 +125,7 @@ func betweenTwoNumbers(a, b, c float64) bool {
 }
 
 func betweenTwoPoints(firstPoint, secondPoint, thirdPoint *vector) bool {
-	if !isCollinear(
-		subVectors(secondPoint, firstPoint),
+	if !subVectors(secondPoint, firstPoint).areCollinear(
 		subVectors(secondPoint, thirdPoint),
 	) {
 		return false
@@ -128,23 +133,6 @@ func betweenTwoPoints(firstPoint, secondPoint, thirdPoint *vector) bool {
 
 	return betweenTwoNumbers(firstPoint.x, thirdPoint.x, secondPoint.x) &&
 		betweenTwoNumbers(firstPoint.y, thirdPoint.y, secondPoint.y)
-}
-
-func buildLineWithCheck(
-	firstPoint,
-	secondPoint,
-	firstEndOtherSegment,
-	secondEndOtherSegment *vector,
-) (*line, bool, error) {
-	firstLine, err := buildLine(firstPoint, secondPoint)
-	if err != nil {
-		if betweenTwoPoints(
-			firstEndOtherSegment, firstPoint, secondEndOtherSegment) {
-			return nil, true, err
-		}
-		return nil, false, err
-	}
-	return firstLine, false, nil
 }
 
 func min(a, b float64) float64 {
@@ -170,18 +158,24 @@ func checkLocationOnLine(a, b, c, d *vector, firstLine, secondLine *line) bool {
 }
 
 func run(a, b, c, d *vector) bool {
-	firstLine, ans, err := buildLineWithCheck(a, b, c, d)
-	if err != nil {
-		return ans
+	firstLine, err := buildLine(a, b)
+	if errors.Is(errPointsAreEqual, err) {
+		if betweenTwoPoints(c, a, d) {
+			return true
+		}
+		return false
 	}
 
-	secondLine, ans, err := buildLineWithCheck(c, d, a, b)
-	if err != nil {
-		return ans
+	secondLine, err := buildLine(c, d)
+	if errors.Is(errPointsAreEqual, err) {
+		if betweenTwoPoints(a, c, b) {
+			return true
+		}
+		return false
 	}
 
 	intersection, err := getIntersection(firstLine, secondLine)
-	if err != nil {
+	if errors.Is(errLinesParallel, err) {
 		return checkLocationOnLine(a, b, c, d, firstLine, secondLine)
 	}
 

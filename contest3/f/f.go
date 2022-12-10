@@ -52,10 +52,6 @@ type Vector struct {
 	x, y int
 }
 
-func (v *Vector) String() string {
-	return fmt.Sprintf("%d %d", int(v.x), int(v.y))
-}
-
 func vectorProduct(v1 *Vector, v2 *Vector) int {
 	return v1.x*v2.y - v1.y*v2.x
 }
@@ -68,12 +64,12 @@ func ScanVector(scanner *bufio.Scanner) *Vector {
 	return &Vector{x: ScanInt(scanner), y: ScanInt(scanner)}
 }
 
-func ScanPolygon(scanner *bufio.Scanner, vertices int) *Polygon {
-	newPolynom := &Polygon{}
+func ScanPoints(scanner *bufio.Scanner, vertices int) []*Vector {
+	var points []*Vector
 	for i := 0; i < vertices; i++ {
-		newPolynom.vertices = append(newPolynom.vertices, ScanVector(scanner))
+		points = append(points, ScanVector(scanner))
 	}
-	return newPolynom
+	return points
 }
 
 func subVectors(first, second *Vector) *Vector {
@@ -83,37 +79,38 @@ func subVectors(first, second *Vector) *Vector {
 	}
 }
 
-func (p *Polygon) sortVertices() {
-	sort.Slice(p.vertices, func(i, j int) bool {
-		return p.vertices[i].x < p.vertices[j].x ||
-			(p.vertices[i].x == p.vertices[j].x &&
-				p.vertices[i].y < p.vertices[j].y)
+func sortVertices(points []*Vector) {
+	sort.Slice(points, func(i, j int) bool {
+		return points[i].x < points[j].x ||
+			(points[i].x == points[j].x &&
+				points[i].y < points[j].y)
 	})
 }
 
-func (p *Polygon) convexHull() ([]*Vector, []*Vector) {
-	p.sortVertices()
+func convexHull(points []*Vector) ([]*Vector, []*Vector) {
+	sortVertices(points)
 	var upperPart, lowerPart []*Vector
-	upperPart = append(upperPart, p.vertices[0])
-	upperPart = append(upperPart, p.vertices[1])
-	lowerPart = append(lowerPart, p.vertices[0])
-	lowerPart = append(lowerPart, p.vertices[1])
+	upperPart = append(upperPart, points[0])
+	upperPart = append(upperPart, points[1])
+	lowerPart = append(lowerPart, points[0])
+	lowerPart = append(lowerPart, points[1])
 
-	processVertex := func(part *[]*Vector, isUpper, index int) {
-		for len(*part) > 1 &&
-			vectorProduct(
-				subVectors((*part)[len(*part)-2], (*part)[len(*part)-1]),
-				subVectors(p.vertices[index], (*part)[len(*part)-1]),
-			)*isUpper <= 0 {
-			*part = (*part)[:len(*part)-1]
+	processVertex := func(part []*Vector, isUpper, index int) []*Vector {
+		crossProduct := vectorProduct(
+			subVectors((part)[len(part)-2], part[len(part)-1]),
+			subVectors(points[index], part[len(part)-1]),
+		)
+		for len(part) > 1 && crossProduct*isUpper <= 0 {
+			part = part[:len(part)-1]
 		}
+		return part
 	}
 
-	for i := 2; i < len(p.vertices); i++ {
-		processVertex(&upperPart, 1, i)
-		upperPart = append(upperPart, p.vertices[i])
-		processVertex(&lowerPart, -1, i)
-		lowerPart = append(lowerPart, p.vertices[i])
+	for i := 2; i < len(points); i++ {
+		upperPart = processVertex(upperPart, 1, i)
+		upperPart = append(upperPart, points[i])
+		lowerPart = processVertex(lowerPart, -1, i)
+		lowerPart = append(lowerPart, points[i])
 	}
 
 	lowerPart = lowerPart[1 : len(lowerPart)-1]
@@ -126,14 +123,14 @@ func main() {
 	scanner.Split(splitFunc)
 
 	N := ScanInt(scanner)
-	polygon := ScanPolygon(scanner, N)
+	points := ScanPoints(scanner, N)
 
-	upperPart, lowerPart := polygon.convexHull()
+	upperPart, lowerPart := convexHull(points)
 	fmt.Println(len(upperPart) + len(lowerPart))
 	for _, vertex := range upperPart {
-		fmt.Println(vertex)
+		fmt.Printf("%d %d\n", int(vertex.x), int(vertex.y))
 	}
 	for i := len(lowerPart) - 1; i >= 0; i-- {
-		fmt.Println(lowerPart[i])
+		fmt.Printf("%d %d\n", int(lowerPart[i].x), int(lowerPart[i].y))
 	}
 }

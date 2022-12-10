@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	epsilon   = float64(1) / 10000000
-	precision = float64(10000000)
+	epsilon   = 1e-7
+	precision = 1e7
 )
 
 func ScanInt(scanner *bufio.Scanner) int {
@@ -71,11 +71,11 @@ func ScanVector(scanner *bufio.Scanner) *Vector {
 }
 
 func ScanPolygon(scanner *bufio.Scanner, vertices int) *Polygon {
-	newPolynom := &Polygon{}
+	newPolygon := &Polygon{}
 	for i := 0; i < vertices; i++ {
-		newPolynom.vertices = append(newPolynom.vertices, ScanVector(scanner))
+		newPolygon.vertices = append(newPolygon.vertices, ScanVector(scanner))
 	}
-	return newPolynom
+	return newPolygon
 }
 
 type Edge struct {
@@ -96,7 +96,7 @@ type Line struct {
 	A, B, C float64
 }
 
-func (l *Line) checkHalfPlanes(firstPoint, secondPoint *Vector) float64 {
+func (l *Line) arePointsFromDiffHalves(firstPoint, secondPoint *Vector) float64 {
 	if (l.A*firstPoint.x+l.B*firstPoint.y+l.C)*
 		(l.A*secondPoint.x+l.B*secondPoint.y+l.C) < 0 {
 		return 1
@@ -119,7 +119,7 @@ func max(a, b float64) float64 {
 }
 
 func buildLine(firstVector, secondVector *Vector) (*Line, error) {
-	if Equal(firstVector.x, secondVector.x) && Equal(secondVector.y, firstVector.y) {
+	if equal(firstVector.x, secondVector.x) && equal(secondVector.y, firstVector.y) {
 		return nil, fmt.Errorf("Vectors are equal")
 	}
 
@@ -135,11 +135,11 @@ func betweenTwoNumbers(a, b, c float64) bool {
 	return min(a, b) <= c+epsilon && c <= max(a, b)+epsilon
 }
 
-func Equal(a, b float64) bool {
+func equal(a, b float64) bool {
 	return math.Abs(a-b) < epsilon
 }
 
-func betweenTwoVectors(firstVector, secondVector, thirdVector *Vector) bool {
+func betweenTwoPointsOnLine(firstVector, secondVector, thirdVector *Vector) bool {
 	return betweenTwoNumbers(firstVector.x, thirdVector.x, secondVector.x) &&
 		betweenTwoNumbers(firstVector.y, thirdVector.y, secondVector.y)
 }
@@ -161,9 +161,9 @@ func (p *Polygon) initEdges() {
 	}
 }
 
-func (p *Polygon) isInside(point *Vector) int {
+func (p *Polygon) containsInside(point *Vector) bool {
 	processTwoEdges := func(line *Line, firstEdge *Edge, secondEdge *Edge) int {
-		return int(line.checkHalfPlanes(
+		return int(line.arePointsFromDiffHalves(
 			firstEdge.firstEnd, secondEdge.secondEnd,
 		))
 	}
@@ -171,36 +171,39 @@ func (p *Polygon) isInside(point *Vector) int {
 	edgesNumber := len(p.edges)
 	horizontalLine := &Line{A: 0, B: 1, C: -point.y}
 	for i, edge := range p.edges {
-		if Equal(edge.line.A, 0) && point.y != edge.firstEnd.y {
+		if equal(edge.line.A, 0) && point.y != edge.firstEnd.y {
 			continue
 		}
-		if Equal(edge.line.A, 0) && point.x <= edge.secondEnd.x {
+		if equal(edge.line.A, 0) && point.x <= edge.secondEnd.x {
 			cntEdges += processTwoEdges(
 				edge.line, p.edges[(i-1+edgesNumber)%edgesNumber], p.edges[(i+1)%edgesNumber],
 			)
 			continue
 		}
-		if Equal(edge.secondEnd.y, point.y) && point.x <= edge.secondEnd.x {
+		if equal(edge.secondEnd.y, point.y) && point.x <= edge.secondEnd.x {
 			cntEdges += processTwoEdges(
 				horizontalLine, edge, p.edges[(i+1)%edgesNumber],
 			)
 			continue
 		}
-		if Equal(edge.firstEnd.y, point.y) {
+		if equal(edge.firstEnd.y, point.y) {
 			continue
 		}
 		x := (-edge.line.C - edge.line.B*point.y) / edge.line.A
-		if betweenTwoVectors(edge.firstEnd, NewVector(x, point.y), edge.secondEnd) && point.x <= x {
+		if betweenTwoPointsOnLine(edge.firstEnd, NewVector(x, point.y), edge.secondEnd) && point.x <= x {
 			cntEdges++
 		}
 	}
-	return cntEdges % 2
+	if cntEdges%2 == 1 {
+		return true
+	}
+	return false
 }
 
 func (p *Polygon) checkBoundary(point *Vector) bool {
 	for _, edge := range p.edges {
-		if Equal(edge.line.A*point.x+edge.line.B*point.y+edge.line.C, 0) &&
-			betweenTwoVectors(edge.firstEnd, point, edge.secondEnd) {
+		if equal(edge.line.A*point.x+edge.line.B*point.y+edge.line.C, 0) &&
+			betweenTwoPointsOnLine(edge.firstEnd, point, edge.secondEnd) {
 			return true
 		}
 	}
@@ -225,7 +228,7 @@ func main() {
 			fmt.Println("BOUNDARY")
 			continue
 		}
-		if polygon.isInside(point) == 1 {
+		if polygon.containsInside(point) {
 			fmt.Println("INSIDE")
 			continue
 		}

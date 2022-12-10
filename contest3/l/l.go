@@ -155,7 +155,7 @@ func (p *Polygon) initEdges() {
 	}
 }
 
-func reverse[Type *Vector | *Edge](arr []Type) {
+func reverse[Type interface{}](arr []Type) {
 	left, right := 0, len(arr)-1
 	for left < right {
 		arr[left], arr[right] = arr[right], arr[left]
@@ -345,25 +345,23 @@ func (p *Polygon) findExtremeVertex() int {
 	return index
 }
 
+func buildPolygon(scanner *bufio.Scanner, verticesNumber int) *Polygon {
+	polygon := ScanPolygon(scanner, verticesNumber)
+	polygon.defineClockwise()
+	polygon.initEdges()
+	polygon.sortVertices()
+	return polygon
+}
+
 func run(scanner *bufio.Scanner) {
 	n := ScanInt(scanner)
-	firstPolygon := ScanPolygon(scanner, n)
-	firstPolygon.defineClockwise()
-	firstPolygon.initEdges()
+	firstPolygon := buildPolygon(scanner, n)
 
 	n = ScanInt(scanner)
-	secondPolygon := ScanPolygon(scanner, n)
-	secondPolygon.defineClockwise()
-	secondPolygon.initEdges()
+	secondPolygon := buildPolygon(scanner, n)
 
 	n = ScanInt(scanner)
-	thirdPolygon := ScanPolygon(scanner, n)
-	thirdPolygon.defineClockwise()
-	thirdPolygon.initEdges()
-
-	firstPolygon.sortVertices()
-	secondPolygon.sortVertices()
-	thirdPolygon.sortVertices()
+	thirdPolygon := buildPolygon(scanner, n)
 
 	sumPolygons := sumPolygons(sumPolygons(firstPolygon, secondPolygon), thirdPolygon)
 	mostLeftPoint := sumPolygons.findExtremeVertex()
