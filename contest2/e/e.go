@@ -84,7 +84,7 @@ func fft(poly []complex128, isInvert bool) {
 	}
 }
 
-func run(firstPoly []complex128, secondPoly []complex128) []int {
+func multiply(firstPoly []complex128, secondPoly []complex128) []int { // equal lengths are expected
 	minDegTwo := 1
 	for minDegTwo < len(firstPoly) {
 		minDegTwo <<= 1
@@ -110,7 +110,7 @@ func run(firstPoly []complex128, secondPoly []complex128) []int {
 		resPoly[i] = int(math.Round(real(helpPoly[i])))
 	}
 
-	for resPoly[len(resPoly)-1] == 0 {
+	for len(resPoly) > 0 && resPoly[len(resPoly)-1] == 0 {
 		resPoly = resPoly[:(len(resPoly) - 1)]
 	}
 	reverse(resPoly)
@@ -153,7 +153,7 @@ func main() {
 	for len(secondPoly) < len(firstPoly) {
 		secondPoly = append(secondPoly, 0)
 	}
-	resultPoly := run(firstPoly, secondPoly)
+	resultPoly := multiply(firstPoly, secondPoly)
 	fmt.Printf("%d ", len(resultPoly)-1)
 	for _, coeff := range resultPoly {
 		fmt.Printf("%d ", coeff)

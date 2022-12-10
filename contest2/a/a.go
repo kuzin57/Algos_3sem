@@ -8,6 +8,8 @@ import (
 	"strconv"
 )
 
+var _ fmt.Stringer = modular{}
+
 func ScanInt(scanner *bufio.Scanner) int {
 	if !scanner.Scan() {
 		panic("nothing to scan")
@@ -75,7 +77,7 @@ type modularFabric struct {
 	module int
 }
 
-func initFabric(module int) modularFabric {
+func newModularFabric(module int) modularFabric {
 	return modularFabric{module: module}
 }
 
@@ -93,25 +95,26 @@ func (m *modular) normalize() {
 	m.value = (m.value + m.module*(-m.value/m.module+1)) % m.module
 }
 
-func sumModulars(first modular, second modular) modular {
-	ans := modular{value: first.value + second.value}
+func (m modular) sumModulars(other modular) modular {
+	ans := modular{value: m.value + other.value}
 	ans.normalize()
 	return ans
 }
 
-func substrModulars(first modular, second modular) modular {
-	ans := modular{value: first.value - second.value}
+func (m modular) subModulars(other modular) modular {
+	ans := modular{value: m.value - other.value}
 	ans.normalize()
 	return ans
 }
 
-func multModulars(first modular, second modular) modular {
-	ans := modular{value: first.value * second.value}
+func (m modular) multModulars(other modular) modular {
+	ans := modular{value: m.value * other.value}
 	ans.normalize()
 	return ans
 }
 
-func findInvert(m modular) modular {
+func (m modular) invert() modular {
+	m.normalize()
 	_, invert := euclidCoeffs(m.module, m.value, m.module)
 	ans := modular{value: invert}
 	ans.normalize()
@@ -131,7 +134,7 @@ func main() {
 	scanner.Buffer(nil, 1<<30)
 	scanner.Split(splitFunc)
 
-	fabric := initFabric(1000000007)
+	fabric := newModularFabric(1000000007)
 	var (
 		a        = ScanModular(scanner, fabric)
 		b        = ScanModular(scanner, fabric)
@@ -141,11 +144,7 @@ func main() {
 		inverseD modular
 	)
 
-	a.normalize()
-	b.normalize()
-	c.normalize()
-	d.normalize()
-	inverseB = findInvert(b)
-	inverseD = findInvert(d)
-	fmt.Println(sumModulars(multModulars(a, inverseB), multModulars(c, inverseD)))
+	inverseB = b.invert()
+	inverseD = d.invert()
+	fmt.Println(a.multModulars(inverseB).sumModulars(c.multModulars(inverseD)))
 }

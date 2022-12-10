@@ -11,9 +11,9 @@ import (
 
 const (
 	module = 7340033
-	ROOT   = 5
-	INVERT = 4404020
-	POWER  = 1 << 20
+	root   = 5
+	invert = 4404020
+	power  = 1 << 20
 )
 
 var (
@@ -93,7 +93,7 @@ func sumModulars(first modular, second modular) modular {
 	return ans
 }
 
-func substrModulars(first modular, second modular) modular {
+func subModulars(first modular, second modular) modular {
 	ans := modular{value: first.value - second.value}
 	ans.normalize()
 	return ans
@@ -149,8 +149,8 @@ func euclidCoeffs(a, b int) (int, int) {
 		if a%b != 0 {
 			tmpX := x
 			tmpY := y
-			x = substrModulars(prevX, multModulars(x, q))
-			y = substrModulars(prevY, multModulars(y, q))
+			x = subModulars(prevX, multModulars(x, q))
+			y = subModulars(prevY, multModulars(y, q))
 			prevX = tmpX
 			prevY = tmpY
 		}
@@ -180,14 +180,14 @@ func fft(poly []int, log int, isInvertFFT bool) {
 
 	curOffset := 1
 	for i := 0; i < log; i++ {
-		var root int
+		var curRoot int
 		if isInvertFFT {
-			root = INVERT
+			curRoot = invert
 		} else {
-			root = ROOT
+			curRoot = root
 		}
-		for j := curOffset * 2; j < POWER; j <<= 1 {
-			root = (root * root) % module
+		for j := curOffset * 2; j < power; j <<= 1 {
+			curRoot = (curRoot * curRoot) % module
 		}
 		for j := 0; j < len(poly); j += curOffset * 2 {
 			curRoot := 1
@@ -202,7 +202,7 @@ func fft(poly []int, log int, isInvertFFT bool) {
 				if poly[k+j+curOffset] < 0 {
 					poly[k+j+curOffset] += module
 				}
-				curRoot = (curRoot * root) % module
+				curRoot = (curRoot * curRoot) % module
 			}
 		}
 		curOffset *= 2
@@ -354,8 +354,8 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	for len(result) > m {
-		result = result[:(len(result) - 1)]
+	if len(result) > m {
+		result = result[:m]
 	}
 	for len(result) < m {
 		result = append(result, 0)

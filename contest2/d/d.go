@@ -83,15 +83,10 @@ func findMinNotUsedPrimeIndex(index int, primes []int, primesUsed []bool) int {
 }
 
 func getNextDivisibleByPrime(num int, primes []int, primesUsed []bool, iteratePrimes func([]int, []bool, int, bool) bool) int {
-	var withoutUsedPrimes bool
-	for {
-		withoutUsedPrimes = !(iteratePrimes(primes, primesUsed, num, true))
-		if !withoutUsedPrimes {
-			num++
-			continue
-		}
-		return num
+	for ; iteratePrimes(primes, primesUsed, num, true); num++ {
 	}
+	num--
+	return num
 }
 
 func main() {
