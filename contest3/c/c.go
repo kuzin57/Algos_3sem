@@ -75,7 +75,7 @@ func ScanVector(scanner *bufio.Scanner) *vector {
 	return &vector{x: float64(x), y: float64(y)}
 }
 
-func (v *vector) areCollinear(other *vector) bool {
+func (v *vector) isCollinearTo(other *vector) bool {
 	return equal(v.x*other.y, other.x*v.y)
 }
 
@@ -86,12 +86,12 @@ func subVectors(first, second *vector) *vector {
 	}
 }
 
-func (l *line) areParallel(other *line) bool {
+func (l *line) isParallelTo(other *line) bool {
 	return equal(l.a*other.b, other.a*l.b)
 }
 
 func getIntersection(first, second *line) (*vector, error) {
-	if first.areParallel(second) {
+	if first.isParallelTo(second) {
 		return nil, errLinesParallel
 	}
 
@@ -125,7 +125,7 @@ func betweenTwoNumbers(a, b, c float64) bool {
 }
 
 func betweenTwoPoints(firstPoint, secondPoint, thirdPoint *vector) bool {
-	if !subVectors(secondPoint, firstPoint).areCollinear(
+	if !subVectors(secondPoint, firstPoint).isCollinearTo(
 		subVectors(secondPoint, thirdPoint),
 	) {
 		return false
