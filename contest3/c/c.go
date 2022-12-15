@@ -15,8 +15,8 @@ const (
 )
 
 var (
-	errLinesParallel  = fmt.Errorf("lines are parallel")
-	errPointsAreEqual = fmt.Errorf("points are equal")
+	errLinesParallel  = errors.New("lines are parallel")
+	errPointsAreEqual = errors.New("points are equal")
 )
 
 func ScanInt(scanner *bufio.Scanner) int {
@@ -160,18 +160,12 @@ func checkLocationOnLine(a, b, c, d *vector, firstLine, secondLine *line) bool {
 func run(a, b, c, d *vector) bool {
 	firstLine, err := buildLine(a, b)
 	if errors.Is(errPointsAreEqual, err) {
-		if betweenTwoPoints(c, a, d) {
-			return true
-		}
-		return false
+		return betweenTwoPoints(c, a, d)
 	}
 
 	secondLine, err := buildLine(c, d)
 	if errors.Is(errPointsAreEqual, err) {
-		if betweenTwoPoints(a, c, b) {
-			return true
-		}
-		return false
+		return betweenTwoPoints(a, c, b)
 	}
 
 	intersection, err := getIntersection(firstLine, secondLine)
