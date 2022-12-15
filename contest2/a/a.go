@@ -95,7 +95,7 @@ func (m *modular) normalize() {
 	m.value = (m.value + m.module*(-m.value/m.module+1)) % m.module
 }
 
-func (m modular) sumModulars(other modular) modular {
+func (m modular) sum(other modular) modular {
 	ans := modular{value: m.value + other.value}
 	ans.normalize()
 	return ans
@@ -146,5 +146,5 @@ func main() {
 
 	inverseB = b.invert()
 	inverseD = d.invert()
-	fmt.Println(a.multModulars(inverseB).sumModulars(c.multModulars(inverseD)))
+	fmt.Println(a.multModulars(inverseB).sum(c.multModulars(inverseD)))
 }

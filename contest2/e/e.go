@@ -84,7 +84,8 @@ func fft(poly []complex128, isInvert bool) {
 	}
 }
 
-func multiply(firstPoly []complex128, secondPoly []complex128) []int { // equal lengths are expected
+// equal lengths are expected
+func multiply(firstPoly []complex128, secondPoly []complex128) []int {
 	minDegTwo := 1
 	for minDegTwo < len(firstPoly) {
 		minDegTwo <<= 1
